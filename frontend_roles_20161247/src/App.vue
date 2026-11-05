@@ -16,7 +16,7 @@ const cargarDatos = async () => {
   try {
     const [resR, resU, resE] = await Promise.all([
       axios.get(`${urlBase}/v2/roles`),
-      axios.get(`${urlBase}/v1/usuarios`),
+      axios.get(`${urlBase}/v2/usuarios`),
       axios.get(`${urlBase}/v2/employees`)
     ]);
     roles.value = resR.data.data || resR.data;
@@ -29,7 +29,10 @@ const cargarDatos = async () => {
 
 const guardarRol = async () => {
   try {
-    const payload = { name: formRol.value.name, description: formRol.value.description };
+    const payload = { 
+      name: formRol.value.name, 
+      description: formRol.value.description || null 
+    };
     if (formRol.value.id) await axios.put(`${urlBase}/v2/roles/${formRol.value.id}`, payload);
     else await axios.post(`${urlBase}/v2/roles`, payload);
     
@@ -45,35 +48,47 @@ const guardarUsuario = async () => {
     const payload = { 
       username: formUsuario.value.username, 
       email: formUsuario.value.email,
-      password: formUsuario.value.password,
-      role_id: Number(formUsuario.value.role_id) 
+      role_id: Number(formUsuario.value.role_id)
     };
     
-    if (formUsuario.value.id) await axios.put(`${urlBase}/v1/usuarios/${formUsuario.value.id}`, payload);
-    else await axios.post(`${urlBase}/v1/usuarios`, payload);
+    if (formUsuario.value.password) {
+      payload.password = String(formUsuario.value.password);
+    }
+    
+    if (formUsuario.value.id) await axios.put(`${urlBase}/v2/usuarios/${formUsuario.value.id}`, payload);
+    else await axios.post(`${urlBase}/v2/usuarios`, payload);
     
     formUsuario.value = { id: null, username: '', email: '', password: '', role_id: '' };
     cargarDatos();
-  } catch (error) { console.error("Error Usuarios:", error.response?.data); alert("Error al guardar usuario"); }
+  } catch (error) { 
+    console.error("Error Usuarios:", error.response?.data); 
+    alert(error.response?.data?.message || "Error al guardar usuario"); 
+  }
 };
-const eliminarUsuario = async (id) => { await axios.delete(`${urlBase}/v1/usuarios/${id}`); cargarDatos(); };
-const editarUsuario = (item) => { formUsuario.value = { ...item }; };
+const eliminarUsuario = async (id) => { await axios.delete(`${urlBase}/v2/usuarios/${id}`); cargarDatos(); };
+const editarUsuario = (item) => { formUsuario.value = { ...item, password: '' }; };
 
 const guardarEmpleado = async () => {
   try {
     const payload = { 
       user_id: Number(formEmpleado.value.user_id),
       first_name: formEmpleado.value.first_name,
-      last_name: formEmpleado.value.last_name,
-      job_title: formEmpleado.value.job_title
+      last_name: formEmpleado.value.last_name
     };
+    
+    if (formEmpleado.value.job_title && formEmpleado.value.job_title.trim() !== '') {
+      payload.job_title = formEmpleado.value.job_title;
+    }
     
     if (formEmpleado.value.id) await axios.put(`${urlBase}/v2/employees/${formEmpleado.value.id}`, payload);
     else await axios.post(`${urlBase}/v2/employees`, payload);
     
     formEmpleado.value = { id: null, user_id: '', first_name: '', last_name: '', job_title: '' };
     cargarDatos();
-  } catch (error) { console.error("Error Empleados:", error.response?.data); alert("Error al guardar empleado"); }
+  } catch (error) { 
+    console.error("Error Empleados:", error.response?.data); 
+    alert(error.response?.data?.message || "Error al guardar empleado"); 
+  }
 };
 const eliminarEmpleado = async (id) => { await axios.delete(`${urlBase}/v2/employees/${id}`); cargarDatos(); };
 const editarEmpleado = (item) => { formEmpleado.value = { ...item }; };
